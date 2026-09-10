@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UdudDetec — Monitoring Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c0f0d;
+    --panel: #121613;
+    --panel-border: #232a25;
+    --text: #d9e4dd;
+    --text-dim: #6f7d74;
+    --accent: #5eead4;
+    --normal: #4ade80;
+    --waspada: #fbbf24;
+    --bahaya: #f87171;
+    --bahaya-glow: rgba(248, 113, 113, 0.15);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    min-height: 100vh;
+    padding: 32px 24px 80px;
+    background-image:
+      radial-gradient(circle at 15% 0%, rgba(94, 234, 212, 0.05), transparent 40%),
+      radial-gradient(circle at 85% 20%, rgba(248, 113, 113, 0.04), transparent 45%);
+  }
+
+  .wrap { max-width: 1100px; margin: 0 auto; }
+
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 16px;
+    border-bottom: 1px solid var(--panel-border);
+    padding-bottom: 20px;
+    margin-bottom: 28px;
+  }
+
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  h1 span { color: var(--accent); }
+
+  .live-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-dim);
+    padding: 6px 12px;
+    border: 1px solid var(--panel-border);
+    border-radius: 999px;
+    background: var(--panel);
+  }
+
+  .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--text-dim);
+    transition: background 0.3s;
+  }
+  .dot.on { background: var(--normal); box-shadow: 0 0 8px var(--normal); }
+
+  .setup {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 20px 22px;
+    margin-bottom: 28px;
+  }
+  .setup h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 14px;
+    color: var(--accent);
+  }
+  .setup-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .field label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  .field input {
+    width: 100%;
+    background: #0a0d0b;
+    border: 1px solid var(--panel-border);
+    border-radius: 6px;
+    padding: 9px 10px;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+  }
+  .field input:focus { outline: none; border-color: var(--accent); }
+
+  .setup-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 16px;
+  }
+  button {
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 10px 18px;
+    border-radius: 6px;
+    border: none;
+    background: var(--accent);
+    color: #0a0d0b;
+    cursor: pointer;
+  }
+  button:hover { opacity: 0.85; }
+  #status-msg { font-size: 12px; color: var(--text-dim); }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+  }
+  .stat {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .stat .label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 8px; }
+  .stat .value { font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 600; }
+  .stat.total .value { color: var(--text); }
+  .stat.bahaya .value { color: var(--bahaya); }
+  .stat.waspada .value { color: var(--waspada); }
+  .stat.latest .value { font-size: 15px; color: var(--accent); }
+
+  .table-panel {
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .table-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--panel-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .table-header h2 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .table-header .count { font-size: 11px; color: var(--text-dim); }
+
+  .table-scroll { overflow-x: auto; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+  thead th {
+    text-align: left;
+    padding: 10px 20px;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    border-bottom: 1px solid var(--panel-border);
+    white-space: nowrap;
+  }
+
+  tbody td {
+    padding: 12px 20px;
+    border-bottom: 1px solid #191e1b;
+    white-space: nowrap;
+  }
+  tbody tr:hover { background: rgba(94, 234, 212, 0.03); }
+  tbody tr:last-child td { border-bottom: none; }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+  }
+  .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
+
+  .badge.bahaya { background: var(--bahaya-glow); color: var(--bahaya); }
+  .badge.bahaya::before { background: var(--bahaya); }
+  .badge.waspada { background: rgba(251, 191, 36, 0.12); color: var(--waspada); }
+  .badge.waspada::before { background: var(--waspada); }
+  .badge.gas { background: rgba(94, 234, 212, 0.08); color: var(--text-dim); }
+
+  .empty {
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+
+  @media (max-width: 640px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="eyebrow">Proyek INOTEK · Smart Smoke Detector</div>
+      <h1>Udud<span>Detec</span> Console</h1>
+    </div>
+    <div class="live-pill"><span class="dot" id="live-dot"></span><span id="live-text">Belum terhubung</span></div>
+  </header>
+
+  <div class="setup">
+    <h2>// Konfigurasi Koneksi</h2>
+    <div class="setup-grid">
+      <div class="field">
+        <label>API Key</label>
+        <input id="apiKey" placeholder="AIzaSy...">
+      </div>
+      <div class="field">
+        <label>Database URL</label>
+        <input id="dbUrl" placeholder="https://ududdetec-default-rtdb...">
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input id="email" placeholder="esp32device@ududdetec.com">
+      </div>
+      <div class="field">
+        <label>Password</label>
+        <input id="password" type="password" placeholder="••••••••">
+      </div>
+    </div>
+    <div class="setup-actions">
+      <button id="connectBtn">Hubungkan</button>
+      <span id="status-msg">Isi kredensial Firebase kamu, lalu klik Hubungkan.</span>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat total"><div class="label">Total Deteksi</div><div class="value" id="statTotal">—</div></div>
+    <div class="stat bahaya"><div class="label">Status Bahaya</div><div class="value" id="statBahaya">—</div></div>
+    <div class="stat waspada"><div class="label">Status Waspada</div><div class="value" id="statWaspada">—</div></div>
+    <div class="stat latest"><div class="label">Deteksi Terakhir</div><div class="value" id="statLatest">—</div></div>
+  </div>
+
+  <div class="table-panel">
+    <div class="table-header">
+      <h2>Log Deteksi</h2>
+      <div style="display:flex; align-items:center; gap:14px;">
+        <span class="count" id="rowCount">0 entri</span>
+        <button id="clearBtn" style="background:transparent; border:1px solid var(--bahaya); color:var(--bahaya); padding:6px 12px; font-size:11px;">Hapus Semua Data</button>
+      </div>
+    </div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Tanggal / Jam</th>
+            <th>Tempat</th>
+            <th>Jenis Asap</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+          <tr><td colspan="4"><div class="empty">Belum ada data. Hubungkan ke Firebase dulu di atas.</div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+  const connectBtn = document.getElementById('connectBtn');
+  const statusMsg = document.getElementById('status-msg');
+  const liveDot = document.getElementById('live-dot');
+  const liveText = document.getElementById('live-text');
+  const tableBody = document.getElementById('tableBody');
+  const rowCount = document.getElementById('rowCount');
+  const statTotal = document.getElementById('statTotal');
+  const statBahaya = document.getElementById('statBahaya');
+  const statWaspada = document.getElementById('statWaspada');
+  const statLatest = document.getElementById('statLatest');
+
+  function badgeFor(jenis) {
+    const j = (jenis || '').toLowerCase();
+    if (j.includes('rokok')) return `<span class="badge bahaya">${jenis}</span>`;
+    if (j.includes('gas')) return `<span class="badge waspada">${jenis}</span>`;
+    return `<span class="badge gas">${jenis || '-'}</span>`;
+  }
+
+  connectBtn.addEventListener('click', () => {
+    const apiKey = document.getElementById('apiKey').value.trim();
+    const dbUrl = document.getElementById('dbUrl').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (!apiKey || !dbUrl || !email || !password) {
+      statusMsg.textContent = 'Lengkapi semua field dulu.';
+      return;
+    }
+
+    statusMsg.textContent = 'Menghubungkan...';
+
+    try {
+      if (!firebase.apps.length) {
+        firebase.initializeApp({ apiKey: apiKey, databaseURL: dbUrl });
+      }
+
+      firebase.auth().signInWithEmailAndPassword(email, password)
+        .then(() => {
+          statusMsg.textContent = 'Terhubung. Memuat data...';
+          liveDot.classList.add('on');
+          liveText.textContent = 'Live';
+          listenToData();
+        })
+        .catch((err) => {
+          statusMsg.textContent = 'Gagal login: ' + err.message;
+        });
+    } catch (err) {
+      statusMsg.textContent = 'Gagal init: ' + err.message;
+    }
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    if (!firebase.apps.length || !firebase.auth().currentUser) {
+      statusMsg.textContent = 'Hubungkan dulu sebelum menghapus data.';
+      return;
+    }
+    const ok = confirm('Hapus SEMUA data deteksi dan reset nomor urut ke 0? Tindakan ini tidak bisa dibatalkan.');
+    if (!ok) return;
+
+    Promise.all([
+      firebase.database().ref('smoke_detector/deteksi').remove(),
+      firebase.database().ref('smoke_detector/counter/total_deteksi').set(0)
+    ]).then(() => {
+      statusMsg.textContent = 'Data berhasil dihapus.';
+    }).catch((err) => {
+      statusMsg.textContent = 'Gagal hapus: ' + err.message;
+    });
+  });
+
+  function listenToData() {
+    const ref = firebase.database().ref('smoke_detector/deteksi');
+
+    ref.on('value', (snapshot) => {
+      const val = snapshot.val();
+
+      if (!val) {
+        tableBody.innerHTML = '<tr><td colspan="4"><div class="empty">Belum ada data deteksi.</div></td></tr>';
+        rowCount.textContent = '0 entri';
+        statTotal.textContent = '0';
+        statBahaya.textContent = '0';
+        statWaspada.textContent = '0';
+        statLatest.textContent = '—';
+        return;
+      }
+
+      const entries = Object.values(val).sort((a, b) => (b.no || 0) - (a.no || 0));
+
+      let bahayaCount = 0, waspadaCount = 0;
+      const rows = entries.map(e => {
+        const j = (e.jenis_asap || '').toLowerCase();
+        if (j.includes('rokok')) bahayaCount++;
+        else if (j.includes('gas') || j.includes('partikel')) waspadaCount++;
+
+        return `<tr>
+          <td>${e.no ?? '-'}</td>
+          <td>${e.tanggal_jam ?? '-'}</td>
+          <td>${e.tempat ?? '-'}</td>
+          <td>${badgeFor(e.jenis_asap)}</td>
+        </tr>`;
+      }).join('');
+
+      tableBody.innerHTML = rows;
+      rowCount.textContent = entries.length + ' entri';
+      statTotal.textContent = entries.length;
+      statBahaya.textContent = bahayaCount;
+      statWaspada.textContent = waspadaCount;
+      statLatest.textContent = entries[0] ? entries[0].tanggal_jam : '—';
+    }, (err) => {
+      statusMsg.textContent = 'Error baca data: ' + err.message;
+    });
+  }
+</script>
+</body>
+</html>
