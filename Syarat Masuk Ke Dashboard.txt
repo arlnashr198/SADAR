@@ -1,0 +1,14 @@
+API_KEY       = 
+AIzaSyDJCY2992-fBD7I1KA-MKXX1TtgZg873po
+
+
+DATABASE_URL  = 
+https://ududdetec-default-rtdb.asia-southeast1.firebasedatabase.app/
+
+
+USER_EMAIL    = 
+firebase@ududdetec.com
+
+
+USER_PASSWORD = 
+123ududrokok
